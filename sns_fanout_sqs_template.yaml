@@ -1,0 +1,429 @@
+Resources:
+  CustomKmsKeyA9BF651B:
+    Type: AWS::KMS::Key
+    Properties:
+      EnableKeyRotation: true
+      KeyPolicy:
+        Statement:
+          - Action: kms:*
+            Effect: Allow
+            Principal:
+              AWS: arn:aws:iam::767397928267:root
+            Resource: "*"
+        Version: "2012-10-17"
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
+    Metadata:
+      aws:cdk:path: CdkSnsSqsStack/CustomKmsKey/Resource
+  CustomKmsKeyAlias9DCC3E96:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: alias/custom-sns
+      TargetKeyId:
+        Fn::GetAtt:
+          - CustomKmsKeyA9BF651B
+          - Arn
+    Metadata:
+      aws:cdk:path: CdkSnsSqsStack/CustomKmsKey/Alias/Resource
+  CustomKmsKey2B6AA6352:
+    Type: AWS::KMS::Key
+    Properties:
+      EnableKeyRotation: true
+      KeyPolicy:
+        Statement:
+          - Action: kms:*
+            Effect: Allow
+            Principal:
+              AWS: arn:aws:iam::767397928267:root
+            Resource: "*"
+          - Action:
+              - kms:Decrypt
+              - kms:GenerateDataKey
+            Condition:
+              ArnEquals:
+                aws:SourceArn:
+                  Ref: KmsEncryptedTopicE3FDE536
+            Effect: Allow
+            Principal:
+              Service: sns.amazonaws.com
+            Resource: "*"
+        Version: "2012-10-17"
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
+    Metadata:
+      aws:cdk:path: CdkSnsSqsStack/CustomKmsKey2/Resource
+  CustomKmsKey2Alias4BCD0263:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: alias/custom-sqs
+      TargetKeyId:
+        Fn::GetAtt:
+          - CustomKmsKey2B6AA6352
+          - Arn
+    Metadata:
+      aws:cdk:path: CdkSnsSqsStack/CustomKmsKey2/Alias/Resource
+  KmsEncryptedTopicE3FDE536:
+    Type: AWS::SNS::Topic
+    Properties:
+      KmsMasterKeyId:
+        Fn::GetAtt:
+          - CustomKmsKeyA9BF651B
+          - Arn
+      TopicName: in-topic
+    Metadata:
+      aws:cdk:path: CdkSnsSqsStack/KmsEncryptedTopic/Resource
+  KmsEncryptedQueue1410CDC86:
+    Type: AWS::SQS::Queue
+    Properties:
+      KmsMasterKeyId:
+        Fn::GetAtt:
+          - CustomKmsKey2B6AA6352
+          - Arn
+      MessageRetentionPeriod: 1209600
+      QueueName: out-queue-1
+      VisibilityTimeout: 30
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
+    Metadata:
+      aws:cdk:path: CdkSnsSqsStack/KmsEncryptedQueue1/Resource
+  KmsEncryptedQueue1Policy4A926342:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action: sqs:*
+            Condition:
+              Bool:
+                aws:SecureTransport: "false"
+            Effect: Deny
+            Principal:
+              AWS: "*"
+            Resource:
+              Fn::GetAtt:
+                - KmsEncryptedQueue1410CDC86
+                - Arn
+          - Action: sqs:SendMessage
+            Condition:
+              ArnEquals:
+                aws:SourceArn:
+                  Ref: KmsEncryptedTopicE3FDE536
+            Effect: Allow
+            Principal:
+              Service: sns.amazonaws.com
+            Resource:
+              Fn::GetAtt:
+                - KmsEncryptedQueue1410CDC86
+                - Arn
+        Version: "2012-10-17"
+      Queues:
+        - Ref: KmsEncryptedQueue1410CDC86
+    Metadata:
+      aws:cdk:path: CdkSnsSqsStack/KmsEncryptedQueue1/Policy/Resource
+  KmsEncryptedQueue1CdkSnsSqsStackKmsEncryptedTopicC7CDDEE0905A0097:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Endpoint:
+        Fn::GetAtt:
+          - KmsEncryptedQueue1410CDC86
+          - Arn
+      Protocol: sqs
+      TopicArn:
+        Ref: KmsEncryptedTopicE3FDE536
+    DependsOn:
+      - KmsEncryptedQueue1Policy4A926342
+    Metadata:
+      aws:cdk:path: CdkSnsSqsStack/KmsEncryptedQueue1/CdkSnsSqsStackKmsEncryptedTopicC7CDDEE0/Resource
+  KmsEncryptedQueue24BF4763C:
+    Type: AWS::SQS::Queue
+    Properties:
+      KmsMasterKeyId:
+        Fn::GetAtt:
+          - CustomKmsKey2B6AA6352
+          - Arn
+      MessageRetentionPeriod: 1209600
+      QueueName: out-queue-2
+      VisibilityTimeout: 30
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
+    Metadata:
+      aws:cdk:path: CdkSnsSqsStack/KmsEncryptedQueue2/Resource
+  KmsEncryptedQueue2Policy20ED23AF:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action: sqs:*
+            Condition:
+              Bool:
+                aws:SecureTransport: "false"
+            Effect: Deny
+            Principal:
+              AWS: "*"
+            Resource:
+              Fn::GetAtt:
+                - KmsEncryptedQueue24BF4763C
+                - Arn
+          - Action: sqs:SendMessage
+            Condition:
+              ArnEquals:
+                aws:SourceArn:
+                  Ref: KmsEncryptedTopicE3FDE536
+            Effect: Allow
+            Principal:
+              Service: sns.amazonaws.com
+            Resource:
+              Fn::GetAtt:
+                - KmsEncryptedQueue24BF4763C
+                - Arn
+        Version: "2012-10-17"
+      Queues:
+        - Ref: KmsEncryptedQueue24BF4763C
+    Metadata:
+      aws:cdk:path: CdkSnsSqsStack/KmsEncryptedQueue2/Policy/Resource
+  KmsEncryptedQueue2CdkSnsSqsStackKmsEncryptedTopicC7CDDEE095DCDA65:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Endpoint:
+        Fn::GetAtt:
+          - KmsEncryptedQueue24BF4763C
+          - Arn
+      Protocol: sqs
+      TopicArn:
+        Ref: KmsEncryptedTopicE3FDE536
+    DependsOn:
+      - KmsEncryptedQueue2Policy20ED23AF
+    Metadata:
+      aws:cdk:path: CdkSnsSqsStack/KmsEncryptedQueue2/CdkSnsSqsStackKmsEncryptedTopicC7CDDEE0/Resource
+  LambdaFunction1ServiceRoleB737523A:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+    Metadata:
+      aws:cdk:path: CdkSnsSqsStack/LambdaFunction1/ServiceRole/Resource
+  LambdaFunction1ServiceRoleDefaultPolicy756C0540:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action:
+              - sqs:ChangeMessageVisibility
+              - sqs:DeleteMessage
+              - sqs:GetQueueAttributes
+              - sqs:GetQueueUrl
+              - sqs:ReceiveMessage
+            Effect: Allow
+            Resource:
+              Fn::GetAtt:
+                - KmsEncryptedQueue1410CDC86
+                - Arn
+          - Action: kms:Decrypt
+            Effect: Allow
+            Resource:
+              Fn::GetAtt:
+                - CustomKmsKey2B6AA6352
+                - Arn
+        Version: "2012-10-17"
+      PolicyName: LambdaFunction1ServiceRoleDefaultPolicy756C0540
+      Roles:
+        - Ref: LambdaFunction1ServiceRoleB737523A
+    Metadata:
+      aws:cdk:path: CdkSnsSqsStack/LambdaFunction1/ServiceRole/DefaultPolicy/Resource
+  LambdaFunction1C0297DE3:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: cdk-hnb659fds-assets-767397928267-us-east-1
+        S3Key: 6e62da0cab8c938748f4964cd113b1a1031e6ccfdc017f94b7c72853a647431d.zip
+      Handler: lambda_function_1.handler
+      Role:
+        Fn::GetAtt:
+          - LambdaFunction1ServiceRoleB737523A
+          - Arn
+      Runtime: python3.10
+    DependsOn:
+      - LambdaFunction1ServiceRoleDefaultPolicy756C0540
+      - LambdaFunction1ServiceRoleB737523A
+    Metadata:
+      aws:cdk:path: CdkSnsSqsStack/LambdaFunction1/Resource
+      aws:asset:path: asset.6e62da0cab8c938748f4964cd113b1a1031e6ccfdc017f94b7c72853a647431d
+      aws:asset:is-bundled: false
+      aws:asset:property: Code
+  LambdaFunction1SqsEventSourceCdkSnsSqsStackKmsEncryptedQueue11914876F4BD1A505:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      EventSourceArn:
+        Fn::GetAtt:
+          - KmsEncryptedQueue1410CDC86
+          - Arn
+      FunctionName:
+        Ref: LambdaFunction1C0297DE3
+    Metadata:
+      aws:cdk:path: CdkSnsSqsStack/LambdaFunction1/SqsEventSource:CdkSnsSqsStackKmsEncryptedQueue11914876F/Resource
+  LambdaFunction2ServiceRoleEA9BF010:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+    Metadata:
+      aws:cdk:path: CdkSnsSqsStack/LambdaFunction2/ServiceRole/Resource
+  LambdaFunction2ServiceRoleDefaultPolicyE199320C:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action:
+              - sqs:ChangeMessageVisibility
+              - sqs:DeleteMessage
+              - sqs:GetQueueAttributes
+              - sqs:GetQueueUrl
+              - sqs:ReceiveMessage
+            Effect: Allow
+            Resource:
+              Fn::GetAtt:
+                - KmsEncryptedQueue24BF4763C
+                - Arn
+          - Action: kms:Decrypt
+            Effect: Allow
+            Resource:
+              Fn::GetAtt:
+                - CustomKmsKey2B6AA6352
+                - Arn
+        Version: "2012-10-17"
+      PolicyName: LambdaFunction2ServiceRoleDefaultPolicyE199320C
+      Roles:
+        - Ref: LambdaFunction2ServiceRoleEA9BF010
+    Metadata:
+      aws:cdk:path: CdkSnsSqsStack/LambdaFunction2/ServiceRole/DefaultPolicy/Resource
+  LambdaFunction2DEC6B58D:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: cdk-hnb659fds-assets-767397928267-us-east-1
+        S3Key: c50b1ecd5b370717944452f3fa495220da14bb724b8096e928de728dc5b196ab.zip
+      Handler: lambda_function_2.handler
+      Role:
+        Fn::GetAtt:
+          - LambdaFunction2ServiceRoleEA9BF010
+          - Arn
+      Runtime: python3.10
+    DependsOn:
+      - LambdaFunction2ServiceRoleDefaultPolicyE199320C
+      - LambdaFunction2ServiceRoleEA9BF010
+    Metadata:
+      aws:cdk:path: CdkSnsSqsStack/LambdaFunction2/Resource
+      aws:asset:path: asset.c50b1ecd5b370717944452f3fa495220da14bb724b8096e928de728dc5b196ab
+      aws:asset:is-bundled: false
+      aws:asset:property: Code
+  LambdaFunction2SqsEventSourceCdkSnsSqsStackKmsEncryptedQueue2B160CB3CA5296375:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      EventSourceArn:
+        Fn::GetAtt:
+          - KmsEncryptedQueue24BF4763C
+          - Arn
+      FunctionName:
+        Ref: LambdaFunction2DEC6B58D
+    Metadata:
+      aws:cdk:path: CdkSnsSqsStack/LambdaFunction2/SqsEventSource:CdkSnsSqsStackKmsEncryptedQueue2B160CB3C/Resource
+  SnsPublisherFunctionServiceRole19514CEC:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+    Metadata:
+      aws:cdk:path: CdkSnsSqsStack/SnsPublisherFunction/ServiceRole/Resource
+  SnsPublisherFunctionServiceRoleDefaultPolicy5084B870:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action: sns:Publish
+            Effect: Allow
+            Resource:
+              Ref: KmsEncryptedTopicE3FDE536
+          - Action:
+              - kms:Decrypt
+              - kms:Encrypt
+              - kms:GenerateDataKey*
+              - kms:ReEncrypt*
+            Effect: Allow
+            Resource:
+              Fn::GetAtt:
+                - CustomKmsKeyA9BF651B
+                - Arn
+        Version: "2012-10-17"
+      PolicyName: SnsPublisherFunctionServiceRoleDefaultPolicy5084B870
+      Roles:
+        - Ref: SnsPublisherFunctionServiceRole19514CEC
+    Metadata:
+      aws:cdk:path: CdkSnsSqsStack/SnsPublisherFunction/ServiceRole/DefaultPolicy/Resource
+  SnsPublisherFunctionC80DCDF8:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: cdk-hnb659fds-assets-767397928267-us-east-1
+        S3Key: 8a4d9eba1d74c99dceae8a385a072c671aa04172e18be13ce0a661e7349506fc.zip
+      Environment:
+        Variables:
+          TOPIC_ARN:
+            Ref: KmsEncryptedTopicE3FDE536
+      Handler: sns_proxy.handler
+      Role:
+        Fn::GetAtt:
+          - SnsPublisherFunctionServiceRole19514CEC
+          - Arn
+      Runtime: python3.10
+    DependsOn:
+      - SnsPublisherFunctionServiceRoleDefaultPolicy5084B870
+      - SnsPublisherFunctionServiceRole19514CEC
+    Metadata:
+      aws:cdk:path: CdkSnsSqsStack/SnsPublisherFunction/Resource
+      aws:asset:path: asset.8a4d9eba1d74c99dceae8a385a072c671aa04172e18be13ce0a661e7349506fc
+      aws:asset:is-bundled: false
+      aws:asset:property: Code
+  CDKMetadata:
+    Type: AWS::CDK::Metadata
+    Properties:
+      Analytics: v2:deflate64:H4sIAAAAAAAA/2WNTU/DMAyGf8vurqH0sPOG4IKQRst9crMwTNuk1AlTFeW/o6R0IHHx835Ifu+w3JZYbugihTp1Rc8thsaR6oAucgzdIBie9Az3byZh1zNJMllEECMYXu3IKoWLaHwrauLRsTUp/esjyKdgePHa69QtIt+D7VnN13CxEXoa2hNhePRGrR+v+uFLG9dYPyn9TOPI5pzq/2kEpgFDbfu8mvm7t05JdSQR7QR3CSAV7r3qtNuT6Ai1lvwTcts4Ov/srUWEw+zerbmpsLzF7eZDmIvJG8eDxnrhNwlPXMJxAQAA
+    Metadata:
+      aws:cdk:path: CdkSnsSqsStack/CDKMetadata/Default
+Parameters:
+  BootstrapVersion:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /cdk-bootstrap/hnb659fds/version
+    Description: Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]
+
